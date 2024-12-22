@@ -20,10 +20,12 @@ router.put(
   CommentController.updateComment
 );
 
+//Hiển thị tất cả commet owr trang chi tiết sp
 router.get("/public", CommentController.getAllCommentPublic);
 
 router.get("/:id", CommentController.getDetailsComment);
 
+//Hiển thị tất cả comment  ở trang quản lý comment, trả về dl kiểu khác so vs hiển thị ơe trang chi tiết sp
 router.get("/", CommentController.getAllComment);
 
 router.delete(

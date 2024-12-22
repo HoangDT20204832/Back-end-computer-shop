@@ -9,6 +9,20 @@ const Role = require("../models/RoleModel");
 const { uniqueValuesArr } = require("../utils");
 const { getMessaging } = require("firebase-admin/messaging");
 
+// const pushMessageToFirebase = async (data) => {
+//   const { deviceTokens, title, body } = data;
+//   const message = {
+//     notification: {
+//       title,
+//       body,
+//     },
+//     tokens: deviceTokens,
+//   };
+//   console.log("tokens", deviceTokens);
+
+//   await getMessaging().sendEachForMulticast(message);
+// };
+
 const pushMessageToFirebase = async (data) => {
   const { deviceTokens, title, body } = data;
   const message = {
@@ -19,7 +33,23 @@ const pushMessageToFirebase = async (data) => {
     tokens: deviceTokens,
   };
 
-  await getMessaging().sendMulticast(message);
+  try {
+    const response = await getMessaging().sendEachForMulticast(message);
+    if (response.failureCount > 0) {
+      const failedTokens = [];
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          failedTokens.push(deviceTokens[idx]);
+        }
+      });
+      console.error("Failed to send notifications to the following tokens:", failedTokens);
+    }
+    console.log("Notification sent successfully:", response);
+    return response;
+  } catch (error) {
+    console.error("Error sending notifications:", error);
+    throw new Error("Failed to send notifications through Firebase.");
+  }
 };
 
 const getUserAndAdminTokens = async (userId) => {
@@ -61,6 +91,8 @@ const pushNotification = (newNotification) => {
       };
 
       const createdNotification = await Notification.create(notificationCreate);
+      console.log("tokens", deviceTokens);
+
       if (deviceTokens.length > 0) {
         const mapTitle = {
           [ACTION_NOTIFICATION_ORDER.CANCEL_ORDER]: "Hủy đơn hàng",
